@@ -1,166 +1,118 @@
 <!DOCTYPE html>
 <html lang="pt-BR">
 <head>
-  <meta charset="UTF-8" />
-  <title>Gerador de Pedidos Shopee</title>
-  <style>
-    body {
-      font-family: Calibri, sans-serif;
-      margin: 40px;
-      background: #f7f7f7;
-    }
-    table {
-      border-collapse: collapse;
-      width: 100%;
-      background: #fff;
-    }
-    th, td {
-      border: 1px solid #ccc;
-      padding: 8px;
-      text-align: left;
-    }
-    th {
-      background: #eee;
-    }
-    input {
-      width: 100%;
-      box-sizing: border-box;
-      border: none;
-      padding: 6px;
-    }
-    input:focus {
-      outline: 2px solid #0099ff;
-    }
-    .not-found {
-      background-color: #ffd6d6;
-    }
-    button {
-      margin-top: 15px;
-      padding: 10px 20px;
-      font-size: 14px;
-      cursor: pointer;
-    }
-  </style>
+<meta charset="UTF-8">
+<title>Pedidos Shopee</title>
+<style>
+body {font-family: Calibri, sans-serif; margin:40px; background:#f7f7f7;}
+table {border-collapse:collapse; width:100%; background:#fff;}
+th,td {border:1px solid #ccc; padding:8px;}
+th {background:#eee;}
+input {width:100%; border:none; padding:6px;}
+.not-found {background:#ffd6d6;}
+button {margin-top:15px; padding:10px 20px; cursor:pointer;}
+</style>
 </head>
 <body>
-  <h2>Gerador de Pedidos Shopee</h2>
+<h2>Gerador de Pedidos Shopee</h2>
+<table id="pedidoTable">
+<thead><tr><th>QTD</th><th>PRODUTO</th><th>SKU</th><th>CÓD RASTREIO</th></tr></thead>
+<tbody id="pedidoBody">
+<tr>
+<td><input type="number" class="qtd"></td>
+<td><input type="text" class="produto"></td>
+<td><input type="text" class="sku"></td>
+<td><input type="text" class="rastreio"></td>
+</tr>
+</tbody>
+</table>
+<button id="salvarBtn">Salvar novos produtos no GitHub</button>
 
-  <table id="pedidoTable">
-    <thead>
-      <tr>
-        <th>QTD</th>
-        <th>PRODUTO</th>
-        <th>SKU</th>
-        <th>CÓD RASTREIO</th>
-      </tr>
-    </thead>
-    <tbody id="pedidoBody">
-      <tr>
-        <td><input type="number" class="qtd" /></td>
-        <td><input type="text" class="produto" /></td>
-        <td><input type="text" class="sku" /></td>
-        <td><input type="text" class="rastreio" /></td>
-      </tr>
-    </tbody>
-  </table>
+<script>
+let produtos=[];
 
-  <button id="salvarBtn">Salvar novos produtos</button>
-  <button id="exportarBtn">Exportar banco de dados</button>
+// === CONFIG ===
+const repo="tiagopinho/PedidosDrop";
+const filePath="date.json";
 
-  <script>
-    let produtos = [];
-    
-    // Detecta ambiente atual
-    const isGitHubPages = window.location.hostname.includes("github.io");
-    const repoPath = isGitHubPages ? "/PedidosDrop" : "";
-    const jsonPath = `${repoPath}/date.json`;
-    console.log("🌐 Ambiente detectado:", isGitHubPages ? "GitHub Pages" : "Localhost");
-    console.log("📁 Caminho do banco:", jsonPath);
+// === CARREGAR BANCO ===
+fetch("date.json")
+  .then(r=>r.json())
+  .then(d=>{produtos=d; console.log("Banco carregado:",produtos);})
+  .catch(()=>produtos=[]);
 
-    // Carrega o banco JSON
-    async function carregarBanco() {
-      try {
-        const resposta = await fetch(jsonPath + "?v=" + Date.now()); // evita cache
-        if (!resposta.ok) throw new Error("Arquivo JSON não encontrado.");
-        produtos = await resposta.json();
-        console.log("✅ Banco carregado:", produtos);
-      } catch (erro) {
-        console.warn("⚠️ Não foi possível carregar o arquivo JSON:", erro);
-        produtos = [];
-      }
+// === NOVA LINHA ===
+document.getElementById("pedidoBody").addEventListener("input",e=>{
+  if(e.target.classList.contains("qtd")){
+    const linha=e.target.closest("tr");
+    const ultima=pedidoBody.lastElementChild;
+    if(linha===ultima && e.target.value.trim()!==""){
+      const nova=ultima.cloneNode(true);
+      nova.querySelectorAll("input").forEach(i=>i.value="");
+      pedidoBody.appendChild(nova);
     }
+  }
+});
 
-    carregarBanco();
+// === BUSCA SKU ===
+pedidoBody.addEventListener("blur",e=>{
+  if(e.target.classList.contains("sku")){
+    const sku=e.target.value.trim();
+    const linha=e.target.closest("tr");
+    const campo=linha.querySelector(".produto");
+    if(sku){
+      const item=produtos.find(p=>p.sku.toLowerCase()===sku.toLowerCase());
+      if(item){campo.value=item.produto; campo.classList.remove("not-found");}
+      else{campo.value=""; campo.classList.add("not-found");}
+    }
+  }
+},true);
 
-    const corpo = document.getElementById("pedidoBody");
+// === SALVAR NOVOS PRODUTOS ===
+document.getElementById("salvarBtn").addEventListener("click",async()=>{
+  const novos=[];
+  pedidoBody.querySelectorAll("tr").forEach(l=>{
+    const sku=l.querySelector(".sku").value.trim();
+    const produto=l.querySelector(".produto").value.trim();
+    if(sku && produto && l.querySelector(".produto").classList.contains("not-found")){
+      novos.push({sku,produto});
+      l.querySelector(".produto").classList.remove("not-found");
+    }
+  });
+  if(!novos.length) return alert("Nenhum novo produto.");
 
-    // Adiciona nova linha automaticamente ao digitar QTD
-    corpo.addEventListener("input", (e) => {
-      if (e.target.classList.contains("qtd")) {
-        const linha = e.target.closest("tr");
-        const ultima = corpo.lastElementChild;
-        if (linha === ultima && e.target.value.trim() !== "") {
-          const novaLinha = ultima.cloneNode(true);
-          novaLinha.querySelectorAll("input").forEach(input => input.value = "");
-          corpo.appendChild(novaLinha);
-        }
-      }
+  produtos=produtos.concat(novos);
+  alert(`${novos.length} produto(s) novo(s) adicionado(s).`);
+  
+  // === ATUALIZAR NO GITHUB ===
+  let token=localStorage.getItem("github_token");
+  if(!token){
+    token=prompt("Cole seu GitHub Personal Access Token:");
+    if(token) localStorage.setItem("github_token",token);
+    else return alert("Token não informado.");
+  }
+  const apiUrl=`https://api.github.com/repos/${repo}/contents/${filePath}`;
+  try{
+    const shaRes=await fetch(apiUrl,{headers:{Authorization:`token ${token}`}});
+    const shaData=await shaRes.json();
+    const sha=shaData.sha;
+    const newContent=btoa(unescape(encodeURIComponent(JSON.stringify(produtos,null,2))));
+    const updateRes=await fetch(apiUrl,{
+      method:"PUT",
+      headers:{
+        Authorization:`token ${token}`,
+        "Content-Type":"application/json"
+      },
+      body:JSON.stringify({
+        message:"Atualização de produtos Shopee",
+        content:newContent,
+        sha
+      })
     });
-
-    // Busca produto pelo SKU
-    corpo.addEventListener("blur", (e) => {
-      if (e.target.classList.contains("sku")) {
-        const sku = e.target.value.trim();
-        const linha = e.target.closest("tr");
-        const campoProduto = linha.querySelector(".produto");
-
-        if (sku !== "") {
-          const item = produtos.find(p => p.sku.toLowerCase() === sku.toLowerCase());
-          if (item) {
-            campoProduto.value = item.produto;
-            campoProduto.classList.remove("not-found");
-          } else {
-            campoProduto.value = "";
-            campoProduto.classList.add("not-found");
-          }
-        }
-      }
-    }, true);
-
-    // Salvar novos produtos (memória)
-    document.getElementById("salvarBtn").addEventListener("click", () => {
-      const novos = [];
-      corpo.querySelectorAll("tr").forEach(linha => {
-        const sku = linha.querySelector(".sku").value.trim();
-        const produto = linha.querySelector(".produto").value.trim();
-        if (sku && produto && linha.querySelector(".produto").classList.contains("not-found")) {
-          novos.push({ sku, produto });
-          linha.querySelector(".produto").classList.remove("not-found");
-        }
-      });
-
-      if (novos.length > 0) {
-        produtos = produtos.concat(novos);
-        alert(`${novos.length} novo(s) produto(s) adicionado(s) ao banco local.`);
-        console.log("📦 Banco atualizado:", produtos);
-      } else {
-        alert("Nenhum novo produto para salvar.");
-      }
-    });
-
-    // Exporta banco atualizado (download)
-    document.getElementById("exportarBtn").addEventListener("click", () => {
-      const blob = new Blob([JSON.stringify(produtos, null, 2)], { type: "application/json" });
-      const url = URL.createObjectURL(blob);
-      const a = document.createElement("a");
-      a.href = url;
-      a.download = "date.json";
-      document.body.appendChild(a);
-      a.click();
-      document.body.removeChild(a);
-      URL.revokeObjectURL(url);
-      alert("📁 Arquivo date.json exportado com sucesso!");
-    });
-  </script>
+    if(updateRes.ok) alert("✅ Banco atualizado no GitHub!");
+    else alert("Erro ao salvar: "+(await updateRes.text()));
+  }catch(e){alert("Erro: "+e.message);}
+});
+</script>
 </body>
 </html>
