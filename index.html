@@ -1,21 +1,50 @@
 <!DOCTYPE html>
 <html lang="pt-BR">
 <head>
-  <meta charset="UTF-8">
+  <meta charset="UTF-8" />
   <title>Gerador de Pedidos Shopee</title>
   <style>
-    body { font-family: Calibri, sans-serif; margin: 40px; background: #f7f7f7; }
-    table { border-collapse: collapse; width: 100%; background: #fff; }
-    th, td { border: 1px solid #ccc; padding: 8px; text-align: left; }
-    th { background: #eee; }
-    input { width: 100%; box-sizing: border-box; border: none; padding: 6px; }
-    input:focus { outline: 2px solid #0099ff; }
-    .not-found { background-color: #ffd6d6; }
-    button { margin-top: 15px; padding: 10px 20px; font-size: 14px; cursor: pointer; }
+    body {
+      font-family: Calibri, sans-serif;
+      margin: 40px;
+      background: #f7f7f7;
+    }
+    table {
+      border-collapse: collapse;
+      width: 100%;
+      background: #fff;
+    }
+    th, td {
+      border: 1px solid #ccc;
+      padding: 8px;
+      text-align: left;
+    }
+    th {
+      background: #eee;
+    }
+    input {
+      width: 100%;
+      box-sizing: border-box;
+      border: none;
+      padding: 6px;
+    }
+    input:focus {
+      outline: 2px solid #0099ff;
+    }
+    .not-found {
+      background-color: #ffd6d6;
+    }
+    button {
+      margin-top: 15px;
+      padding: 10px 20px;
+      font-size: 14px;
+      cursor: pointer;
+    }
   </style>
 </head>
 <body>
   <h2>Gerador de Pedidos Shopee</h2>
+
   <table id="pedidoTable">
     <thead>
       <tr>
@@ -27,10 +56,10 @@
     </thead>
     <tbody id="pedidoBody">
       <tr>
-        <td><input type="number" class="qtd"></td>
-        <td><input type="text" class="produto"></td>
-        <td><input type="text" class="sku"></td>
-        <td><input type="text" class="rastreio"></td>
+        <td><input type="number" class="qtd" /></td>
+        <td><input type="text" class="produto" /></td>
+        <td><input type="text" class="sku" /></td>
+        <td><input type="text" class="rastreio" /></td>
       </tr>
     </tbody>
   </table>
@@ -40,90 +69,97 @@
 
   <script>
     let produtos = [];
+    
+    // Detecta ambiente atual
+    const isGitHubPages = window.location.hostname.includes("github.io");
+    const repoPath = isGitHubPages ? "/PedidosDrop" : "";
+    const jsonPath = `${repoPath}/date.json`;
+    console.log("🌐 Ambiente detectado:", isGitHubPages ? "GitHub Pages" : "Localhost");
+    console.log("📁 Caminho do banco:", jsonPath);
 
-    // Função para carregar o banco JSON local
+    // Carrega o banco JSON
     async function carregarBanco() {
       try {
-        const resposta = await fetch('date.json');
-        if (!resposta.ok) throw new Error('Arquivo JSON não encontrado.');
+        const resposta = await fetch(jsonPath + "?v=" + Date.now()); // evita cache
+        if (!resposta.ok) throw new Error("Arquivo JSON não encontrado.");
         produtos = await resposta.json();
-        console.log('Banco carregado:', produtos);
+        console.log("✅ Banco carregado:", produtos);
       } catch (erro) {
-        console.warn('Não foi possível carregar o arquivo JSON. Será criado um novo.', erro);
+        console.warn("⚠️ Não foi possível carregar o arquivo JSON:", erro);
         produtos = [];
       }
     }
 
-    // Inicializa o sistema ao abrir
     carregarBanco();
 
-    const corpo = document.getElementById('pedidoBody');
+    const corpo = document.getElementById("pedidoBody");
 
-    // Adiciona nova linha automaticamente
-    corpo.addEventListener('input', (e) => {
-      if (e.target.classList.contains('qtd')) {
-        const linha = e.target.closest('tr');
+    // Adiciona nova linha automaticamente ao digitar QTD
+    corpo.addEventListener("input", (e) => {
+      if (e.target.classList.contains("qtd")) {
+        const linha = e.target.closest("tr");
         const ultima = corpo.lastElementChild;
-        if (linha === ultima && e.target.value.trim() !== '') {
+        if (linha === ultima && e.target.value.trim() !== "") {
           const novaLinha = ultima.cloneNode(true);
-          novaLinha.querySelectorAll('input').forEach(input => input.value = '');
+          novaLinha.querySelectorAll("input").forEach(input => input.value = "");
           corpo.appendChild(novaLinha);
         }
       }
     });
 
     // Busca produto pelo SKU
-    corpo.addEventListener('blur', (e) => {
-      if (e.target.classList.contains('sku')) {
+    corpo.addEventListener("blur", (e) => {
+      if (e.target.classList.contains("sku")) {
         const sku = e.target.value.trim();
-        const linha = e.target.closest('tr');
-        const campoProduto = linha.querySelector('.produto');
-        if (sku !== '') {
+        const linha = e.target.closest("tr");
+        const campoProduto = linha.querySelector(".produto");
+
+        if (sku !== "") {
           const item = produtos.find(p => p.sku.toLowerCase() === sku.toLowerCase());
           if (item) {
             campoProduto.value = item.produto;
-            campoProduto.classList.remove('not-found');
+            campoProduto.classList.remove("not-found");
           } else {
-            campoProduto.value = '';
-            campoProduto.classList.add('not-found');
+            campoProduto.value = "";
+            campoProduto.classList.add("not-found");
           }
         }
       }
     }, true);
 
-    // Salvar novos produtos no banco (JSON virtual)
-    document.getElementById('salvarBtn').addEventListener('click', () => {
+    // Salvar novos produtos (memória)
+    document.getElementById("salvarBtn").addEventListener("click", () => {
       const novos = [];
-      corpo.querySelectorAll('tr').forEach(linha => {
-        const sku = linha.querySelector('.sku').value.trim();
-        const produto = linha.querySelector('.produto').value.trim();
-        if (sku && produto && linha.querySelector('.produto').classList.contains('not-found')) {
+      corpo.querySelectorAll("tr").forEach(linha => {
+        const sku = linha.querySelector(".sku").value.trim();
+        const produto = linha.querySelector(".produto").value.trim();
+        if (sku && produto && linha.querySelector(".produto").classList.contains("not-found")) {
           novos.push({ sku, produto });
-          linha.querySelector('.produto').classList.remove('not-found');
+          linha.querySelector(".produto").classList.remove("not-found");
         }
       });
 
       if (novos.length > 0) {
         produtos = produtos.concat(novos);
         alert(`${novos.length} novo(s) produto(s) adicionado(s) ao banco local.`);
-        console.log('Banco atualizado:', produtos);
+        console.log("📦 Banco atualizado:", produtos);
       } else {
-        alert('Nenhum novo produto para salvar.');
+        alert("Nenhum novo produto para salvar.");
       }
     });
 
-    // Exportar banco de dados atualizado (gera download de JSON)
-    document.getElementById('exportarBtn').addEventListener('click', () => {
-      const blob = new Blob([JSON.stringify(produtos, null, 2)], { type: 'application/json' });
+    // Exporta banco atualizado (download)
+    document.getElementById("exportarBtn").addEventListener("click", () => {
+      const blob = new Blob([JSON.stringify(produtos, null, 2)], { type: "application/json" });
       const url = URL.createObjectURL(blob);
-      const a = document.createElement('a');
+      const a = document.createElement("a");
       a.href = url;
-      a.download = 'date.json';
+      a.download = "date.json";
       document.body.appendChild(a);
       a.click();
       document.body.removeChild(a);
       URL.revokeObjectURL(url);
-      alert('Arquivo date.json exportado com sucesso!');
+      alert("📁 Arquivo date.json exportado com sucesso!");
     });
   </script>
 </body>
