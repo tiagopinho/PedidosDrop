@@ -12,7 +12,7 @@
     border-radius:8px; border:1px solid #ccc;
     box-shadow:0 2px 5px rgba(0,0,0,0.05);
   }
-
+  
   table {border-collapse:collapse; width:100%; table-layout:fixed;}
   th, td {border:1px solid #ccc; padding:6px;}
   th {background:#eee;}
@@ -42,45 +42,63 @@
     border:1px solid #ccc; border-radius:4px;
     padding:8px; font-weight:bold; text-align:center;
   }
+
+  /* ============================
+         ESTILOS PARA IMPRESSÃO
+     ============================ */
   @media print {
 
-  body {
-    margin: 0;
-    background: white;
-  }
+    body {
+      margin: 0;
+      background: white;
+    }
 
-  button, 
-  #addRastreioBtn, 
-  #salvarBtn, 
-  #printBtn {
-    display: none !important;
-  }
+    /* ESCONDER QTD e SKU NA IMPRESSÃO */
+    .col-qtd,
+    .col-sku,
+    td:nth-child(1),
+    td:nth-child(2) {
+      display: none !important;
+    }
 
-  .rastreio-box {
-    box-shadow: none !important;
-    border: 1px solid #000 !important;
-    margin-bottom: 20px;
-  }
+    /* Ajustar larguras das colunas restantes */
+    .col-produto { width: 80% !important; }
+    .col-rastreio { width: 20% !important; }
 
-  table {
-    border-collapse: collapse !important;
-    width: 100% !important;
-    font-size: 14px;
-  }
+    /* Esconder botões */
+    button, 
+    #addRastreioBtn, 
+    #salvarBtn, 
+    #printBtn {
+      display: none !important;
+    }
 
-  th, td {
-    border: 1px solid #000 !important;
-    padding: 6px !important;
-  }
+    .rastreio-box {
+      box-shadow: none !important;
+      border: 1px solid #000 !important;
+      margin-bottom: 20px;
+    }
 
-  textarea, input {
-    border: none !important;
-  }
+    table {
+      border-collapse: collapse !important;
+      width: 100% !important;
+      font-size: 14px;
+    }
 
-  textarea {
-    white-space: pre-wrap !important;
-  }
-}
+    th, td {
+      border: 1px solid #000 !important;
+      padding: 6px !important;
+    }
+
+    textarea, input {
+      border: none !important;
+    }
+
+    textarea {
+      white-space: pre-wrap !important;
+    }
+
+  } /* fim do media print */
 
 </style>
 </head>
@@ -144,9 +162,7 @@ function criarRastreio(valor="") {
   const tbody = wrapper.querySelector(".tbody-group");
   const rastreioTd = wrapper.querySelector(".td-rastreio");
 
-  /* =========================
-      AUTO EXPAND TEXTO
-  ========================= */
+  /* AUTO EXPAND TEXTO */
   wrapper.addEventListener("input", e=>{
     if(e.target.classList.contains("produto")){
       e.target.style.height = "auto";
@@ -154,9 +170,7 @@ function criarRastreio(valor="") {
     }
   });
 
-  /* =========================
-      NOVA LINHA AUTOMÁTICA
-  ========================= */
+  /* NOVA LINHA AUTOMÁTICA */
   wrapper.addEventListener("input", e => {
     if(!["qtd","sku","produto"].some(c=>e.target.classList.contains(c))) return;
 
@@ -178,65 +192,55 @@ function criarRastreio(valor="") {
     }
   });
 
-  /* =========================
-      AUTO PREENCHER PRODUTO + AUTOEXPAND
-  ========================= */
+  /* AUTO PREENCHER PRODUTO + EXPANSÃO DE KIT */
   wrapper.addEventListener("blur", e => {
-  if (!e.target.classList.contains("sku")) return;
+    if (!e.target.classList.contains("sku")) return;
 
-  const sku = e.target.value.trim().toLowerCase();
-  const row = e.target.closest("tr");
-  const campoProduto = row.querySelector(".produto");
-  const qtdDigitada = Number(row.querySelector(".qtd")?.value || 1);
+    const sku = e.target.value.trim().toLowerCase();
+    const row = e.target.closest("tr");
+    const campoProduto = row.querySelector(".produto");
+    const qtdDigitada = Number(row.querySelector(".qtd")?.value || 1);
 
-  if (!sku) return;
+    if (!sku) return;
 
-  const encontrado = produtos.find(p => p.sku?.toLowerCase() === sku);
+    const encontrado = produtos.find(p => p.sku?.toLowerCase() === sku);
 
-  if (!encontrado) {
-    campoProduto.value = "";
-    campoProduto.classList.add("not-found");
-    return;
-  }
+    if (!encontrado) {
+      campoProduto.value = "";
+      campoProduto.classList.add("not-found");
+      return;
+    }
 
-  campoProduto.classList.remove("not-found");
+    campoProduto.classList.remove("not-found");
 
-  // Texto original (com \n)
-  const linhas = encontrado.produto.replace(/\\n/g, "\n").split("\n");
+    const linhas = encontrado.produto.replace(/\\n/g, "\n").split("\n");
 
-  // EXPANSÃO AUTOMÁTICA DO KIT
-  const expandido = linhas.map(linha => {
+    const expandido = linhas.map(linha => {
+      const match = linha.match(/^(\d+)\s*-\s*(.+)$/);
+      if (!match) return linha;
 
-    const match = linha.match(/^(\d+)\s*-\s*(.+)$/);
+      const qtdOriginal = Number(match[1]);
+      const nomeProduto = match[2];
+      const qtdFinal = qtdOriginal * qtdDigitada;
 
-    if (!match) return linha; // Se linha não casar com padrão, retorna igual
+      return `${qtdFinal} - ${nomeProduto}`;
+    });
 
-    const qtdOriginal = Number(match[1]);
-    const nomeProduto = match[2];
+    campoProduto.value = expandido.join("\n");
 
-    const qtdFinal = qtdOriginal * qtdDigitada;
+    campoProduto.style.height = "auto";
+    campoProduto.style.height = campoProduto.scrollHeight + "px";
 
-    return `${qtdFinal} - ${nomeProduto}`;
-  });
-
-  campoProduto.value = expandido.join("\n");
-
-  // AUTOEXPAND FIELD
-  campoProduto.style.height = "auto";
-  campoProduto.style.height = campoProduto.scrollHeight + "px";
-
-}, true);
+  }, true);
 }
 
-/* === CRIA O PRIMEIRO GRUPO === */
+/* Criar o primeiro bloco */
 criarRastreio();
 
-/* === NOVO GRUPO === */
+/* Novo rastreio */
 document.getElementById("addRastreioBtn").addEventListener("click", () => criarRastreio());
 
-/* =========================
-    SALVAR NO GITHUB
-========================= */
+/* SALVAR NO GITHUB (lógica futura) */
 document.getElementById("salvarBtn").addEventListener("click", async()=>{
 
   const todosAgrupados = [];
@@ -267,7 +271,9 @@ document.getElementById("salvarBtn").addEventListener("click", async()=>{
 
   alert("Itens prontos para salvar!");
 });
-  window.onload = () => {
+
+/* Botão imprimir */
+window.onload = () => {
   document.getElementById("printBtn").addEventListener("click", () => {
     window.print();
   });
