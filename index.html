@@ -267,9 +267,11 @@ document.getElementById("salvarBtn").addEventListener("click", async()=>{
 
   alert("Itens prontos para salvar!");
 });
+  window.onload = () => {
   document.getElementById("printBtn").addEventListener("click", () => {
-  window.print();
-});
+    window.print();
+  });
+};
 </script>
 
 </body>
