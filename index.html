@@ -2,117 +2,203 @@
 <html lang="pt-BR">
 <head>
 <meta charset="UTF-8">
-<title>Pedidos Shopee</title>
+<title>Pedidos Shopee - Agrupados por Rastreio</title>
 <style>
-body {font-family: Calibri, sans-serif; margin:40px; background:#f7f7f7;}
-table {border-collapse:collapse; width:100%; background:#fff;}
-th,td {border:1px solid #ccc; padding:8px;}
-th {background:#eee;}
-input {width:100%; border:none; padding:6px;}
-.not-found {background:#ffd6d6;}
-button {margin-top:15px; padding:10px 20px; cursor:pointer;}
+  body {font-family: Calibri, sans-serif; margin:40px; background:#f7f7f7;}
+  h2 {margin-bottom:20px;}
+
+  .rastreio-box {
+    background:#fff; padding:15px; margin-bottom:25px;
+    border-radius:8px; border:1px solid #ccc;
+    box-shadow:0 2px 5px rgba(0,0,0,0.05);
+  }
+
+  table {border-collapse:collapse; width:100%; table-layout:fixed;}
+  th, td {border:1px solid #ccc; padding:6px;}
+  th {background:#eee;}
+
+  input, textarea {
+    width:100%; border:none; padding:6px;
+    box-sizing:border-box; font-family:inherit;
+  }
+  textarea {resize:none; overflow:hidden;}
+
+  .not-found {background:#ffd6d6;}
+
+  button {
+    margin-top:10px; padding:8px 16px;
+    cursor:pointer; border:none; border-radius:4px;
+  }
+  .add-rastreio {background:#2196f3; color:white;}
+  .salvar {background:#673ab7; color:white;}
+
+  /* larguras */
+  .col-qtd {width:10%; max-width:60px; text-align:center;}
+  .col-sku {width:20%; max-width:150px;}
+  .col-produto {width:50%;}
+  .col-rastreio {width:20%;}
+
+  td input.qtd {text-align:center;}
+  .rastreio-input {
+    border:1px solid #ccc; border-radius:4px;
+    padding:8px; font-weight:bold; text-align:center;
+  }
 </style>
 </head>
 <body>
-<h2>Gerador de Pedidos Shopee</h2>
-<table id="pedidoTable">
-<thead><tr><th>QTD</th><th>PRODUTO</th><th>SKU</th><th>CÓD RASTREIO</th></tr></thead>
-<tbody id="pedidoBody">
-<tr>
-<td><input type="number" class="qtd"></td>
-<td><input type="text" class="produto"></td>
-<td><input type="text" class="sku"></td>
-<td><input type="text" class="rastreio"></td>
-</tr>
-</tbody>
-</table>
-<button id="salvarBtn">Salvar novos produtos no GitHub</button>
+
+<h2>Gerador de Pedidos Shopee (Agrupado por Rastreio)</h2>
+
+<div id="rastreiosContainer"></div>
+
+<button id="addRastreioBtn" class="add-rastreio">+ Novo Rastreio</button>
+<button id="salvarBtn" class="salvar">Salvar novos produtos no GitHub</button>
 
 <script>
-let produtos=[];
+let produtos = [];
+const repo = "tiagopinho/PedidosDrop";
+const filePath = "date.json";
 
-// === CONFIG ===
-const repo="tiagopinho/PedidosDrop";
-const filePath="date.json";
-
-// === CARREGAR BANCO ===
+/* =========================
+      CARREGAR JSON
+========================= */
 fetch("date.json")
-  .then(r=>r.json())
-  .then(d=>{produtos=d; console.log("Banco carregado:",produtos);})
-  .catch(()=>produtos=[]);
+  .then(r => r.json())
+  .then(d => produtos = d)
+  .catch(() => produtos = []);
 
-// === NOVA LINHA ===
-document.getElementById("pedidoBody").addEventListener("input",e=>{
-  if(e.target.classList.contains("qtd")){
-    const linha=e.target.closest("tr");
-    const ultima=pedidoBody.lastElementChild;
-    if(linha===ultima && e.target.value.trim()!==""){
-      const nova=ultima.cloneNode(true);
-      nova.querySelectorAll("input").forEach(i=>i.value="");
-      pedidoBody.appendChild(nova);
-    }
-  }
-});
+/* =========================
+   FUNÇÃO: CRIAR GRUPO
+========================= */
+function criarRastreio(valor="") {
 
-// === BUSCA SKU ===
-pedidoBody.addEventListener("blur",e=>{
-  if(e.target.classList.contains("sku")){
-    const sku=e.target.value.trim();
-    const linha=e.target.closest("tr");
-    const campo=linha.querySelector(".produto");
-    if(sku){
-      const item=produtos.find(p=>p.sku.toLowerCase()===sku.toLowerCase());
-      if(item){campo.value=item.produto; campo.classList.remove("not-found");}
-      else{campo.value=""; campo.classList.add("not-found");}
-    }
-  }
-},true);
+  const wrapper = document.createElement("div");
+  wrapper.className = "rastreio-box";
 
-// === SALVAR NOVOS PRODUTOS ===
-document.getElementById("salvarBtn").addEventListener("click",async()=>{
-  const novos=[];
-  pedidoBody.querySelectorAll("tr").forEach(l=>{
-    const sku=l.querySelector(".sku").value.trim();
-    const produto=l.querySelector(".produto").value.trim();
-    if(sku && produto && l.querySelector(".produto").classList.contains("not-found")){
-      novos.push({sku,produto});
-      l.querySelector(".produto").classList.remove("not-found");
+  wrapper.innerHTML = `
+    <table>
+      <thead>
+        <tr>
+          <th class="col-qtd">QTD</th>
+          <th class="col-sku">SKU</th>
+          <th class="col-produto">PRODUTO</th>
+          <th class="col-rastreio">CÓD. RASTREIO</th>
+        </tr>
+      </thead>
+
+      <tbody class="tbody-group">
+        <tr>
+          <td><input type="number" class="qtd"></td>
+          <td><input type="text" class="sku"></td>
+          <td><textarea class="produto" rows="1"></textarea></td>
+          <td class="td-rastreio" rowspan="1">
+            <input type="text" class="rastreio-input rastreio" value="${valor}" placeholder="Ex: BR250982724238Q">
+          </td>
+        </tr>
+      </tbody>
+    </table>
+  `;
+
+  document.getElementById("rastreiosContainer").appendChild(wrapper);
+
+  const tbody = wrapper.querySelector(".tbody-group");
+  const rastreioTd = wrapper.querySelector(".td-rastreio");
+
+  /* =========================
+      AUTO EXPAND TEXTO
+  ========================= */
+  wrapper.addEventListener("input", e=>{
+    if(e.target.classList.contains("produto")){
+      e.target.style.height = "auto";
+      e.target.style.height = e.target.scrollHeight+"px";
     }
   });
-  if(!novos.length) return alert("Nenhum novo produto.");
 
-  produtos=produtos.concat(novos);
-  alert(`${novos.length} produto(s) novo(s) adicionado(s).`);
-  
-  // === ATUALIZAR NO GITHUB ===
-  let token=localStorage.getItem("github_token");
-  if(!token){
-    token=prompt("Cole seu GitHub Personal Access Token:");
-    if(token) localStorage.setItem("github_token",token);
-    else return alert("Token não informado.");
-  }
-  const apiUrl=`https://api.github.com/repos/${repo}/contents/${filePath}`;
-  try{
-    const shaRes=await fetch(apiUrl,{headers:{Authorization:`token ${token}`}});
-    const shaData=await shaRes.json();
-    const sha=shaData.sha;
-    const newContent=btoa(unescape(encodeURIComponent(JSON.stringify(produtos,null,2))));
-    const updateRes=await fetch(apiUrl,{
-      method:"PUT",
-      headers:{
-        Authorization:`token ${token}`,
-        "Content-Type":"application/json"
-      },
-      body:JSON.stringify({
-        message:"Atualização de produtos Shopee",
-        content:newContent,
-        sha
-      })
+  /* =========================
+      NOVA LINHA AUTOMÁTICA
+  ========================= */
+  wrapper.addEventListener("input", e => {
+    if(!["qtd","sku","produto"].some(c=>e.target.classList.contains(c))) return;
+
+    const linha = e.target.closest("tr");
+    const ultima = tbody.lastElementChild;
+
+    if(linha === ultima && e.target.value.trim() !== "") {
+
+      // Criar nova linha
+      const nova = ultima.cloneNode(true);
+      nova.querySelectorAll("input,textarea").forEach(el=>el.value="");
+
+      // Remover célula de rastreio da nova linha
+      if(nova.querySelector(".td-rastreio")){
+        nova.querySelector(".td-rastreio").remove();
+      }
+
+      tbody.appendChild(nova);
+
+      // Atualizar rowspan
+      rastreioTd.rowSpan = tbody.querySelectorAll("tr").length;
+    }
+  });
+
+  /* =========================
+      AUTO PREENCHER PRODUTO
+========================= */
+  wrapper.addEventListener("blur", e=>{
+    if(!e.target.classList.contains("sku")) return;
+    const sku = e.target.value.trim().toLowerCase();
+    const row = e.target.closest("tr");
+    const campoProduto = row.querySelector(".produto");
+
+    if(!sku) return;
+
+    const encontrado = produtos.find(p => p.sku?.toLowerCase() === sku);
+    if(encontrado){
+      campoProduto.value = encontrado.produto;
+      campoProduto.classList.remove("not-found");
+    } else {
+      campoProduto.value = "";
+      campoProduto.classList.add("not-found");
+    }
+  }, true);
+}
+
+/* Criar o primeiro bloco */
+criarRastreio();
+
+/* Novo rastreio */
+document.getElementById("addRastreioBtn").addEventListener("click", ()=> criarRastreio());
+
+/* =========================
+    SALVAR NO GITHUB
+========================= */
+document.getElementById("salvarBtn").addEventListener("click", async()=>{
+
+  const todosAgrupados = [];
+  const novosProdutos = [];
+
+  document.querySelectorAll(".rastreio-box").forEach(box =>{
+    const rastreio = box.querySelector(".rastreio").value.trim();
+    const itens = [];
+
+    box.querySelectorAll("tbody tr").forEach(l=>{
+      const qtd = l.querySelector(".qtd")?.value.trim();
+      const sku = l.querySelector(".sku")?.value.trim();
+      const prod = l.querySelector(".produto")?.value.trim();
+      if(sku && prod){
+        itens.push({qtd, sku, produto: prod});
+        if(!produtos.find(p => p.sku?.toLowerCase() === sku.toLowerCase()))
+          novosProdutos.push({sku, produto: prod});
+      }
     });
-    if(updateRes.ok) alert("✅ Banco atualizado no GitHub!");
-    else alert("Erro ao salvar: "+(await updateRes.text()));
-  }catch(e){alert("Erro: "+e.message);}
+
+    if(rastreio && itens.length)
+      todosAgrupados.push({rastreio, itens});
+  });
+
+  alert("Itens prontos para salvar!");
 });
 </script>
+
 </body>
 </html>
