@@ -53,7 +53,12 @@
       background: white;
     }
 
-    /* ESCONDER QTD e SKU NA IMPRESSÃO */
+    /* Remover cabeçalhos */
+    thead {
+      display: none !important;
+    }
+
+    /* Remover QTD e SKU */
     .col-qtd,
     .col-sku,
     td:nth-child(1),
@@ -61,11 +66,11 @@
       display: none !important;
     }
 
-    /* Ajustar larguras das colunas restantes */
+    /* Ajustar larguras */
     .col-produto { width: 80% !important; }
     .col-rastreio { width: 20% !important; }
 
-    /* Esconder botões */
+    /* Ocultar botões */
     button, 
     #addRastreioBtn, 
     #salvarBtn, 
