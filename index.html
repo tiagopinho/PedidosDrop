@@ -3,45 +3,67 @@
 <head>
 <meta charset="UTF-8">
 <title>Pedidos Shopee - Agrupados por Rastreio</title>
+
 <style>
-  body {font-family: Calibri, sans-serif; margin:40px; background:#f7f7f7;}
-  h2 {margin-bottom:20px;}
+  body {
+    font-family: Calibri, sans-serif;
+    margin: 40px;
+    background: #f7f7f7;
+  }
+
+  h2 { margin-bottom: 20px; }
 
   .rastreio-box {
-    background:#fff; padding:15px; margin-bottom:25px;
-    border-radius:8px; border:1px solid #ccc;
-    box-shadow:0 2px 5px rgba(0,0,0,0.05);
+    background: #fff;
+    padding: 15px;
+    margin-bottom: 25px;
+    border-radius: 8px;
+    border: 1px solid #ccc;
+    box-shadow: 0 2px 5px rgba(0,0,0,0.05);
   }
-  
-  table {border-collapse:collapse; width:100%; table-layout:fixed;}
-  th, td {border:1px solid #ccc; padding:6px;}
-  th {background:#eee;}
+
+  table { border-collapse: collapse; width: 100%; table-layout: fixed; }
+  th, td { border: 1px solid #ccc; padding: 6px; }
+  th { background: #eee; }
 
   input, textarea {
-    width:100%; border:none; padding:6px;
-    box-sizing:border-box; font-family:inherit;
+    width: 100%;
+    border: none;
+    padding: 6px;
+    box-sizing: border-box;
+    font-family: inherit;
   }
-  textarea {resize:none; overflow:hidden;}
 
-  .not-found {background:#ffd6d6;}
+  textarea { resize: none; overflow: hidden; }
+
+  .not-found { background: #ffd6d6; }
 
   button {
-    margin-top:10px; padding:8px 16px;
-    cursor:pointer; border:none; border-radius:4px;
+    margin-top: 10px;
+    padding: 8px 16px;
+    cursor: pointer;
+    border: none;
+    border-radius: 4px;
   }
-  .add-rastreio {background:#2196f3; color:white;}
-  .salvar {background:#673ab7; color:white;}
 
-  .col-qtd {width:10%; max-width:60px; text-align:center;}
-  .col-sku {width:20%; max-width:150px;}
+  .add-rastreio { background: #2196f3; color: white; }
+  .salvar { background: #673ab7; color: white; }
+
+  .col-qtd { width: 10%; max-width: 60px; text-align: center; }
+  .col-sku { width: 20%; max-width: 150px; }
+
+  /* ========= CORRIGIDO: TELA ========= */
   .col-produto { width: 70% !important; }
-  .td-rastreio,
   .col-rastreio { width: 30% !important; }
 
-  td input.qtd {text-align:center;}
+  td input.qtd { text-align: center; }
+
   .rastreio-input {
-    border:1px solid #ccc; border-radius:4px;
-    padding:8px; font-weight:bold; text-align:center;
+    border: 1px solid #ccc;
+    border-radius: 4px;
+    padding: 8px;
+    font-weight: bold;
+    text-align: center;
   }
 
   /* ============================
@@ -54,12 +76,8 @@
       background: white;
     }
 
-    /* Remover cabeçalhos */
-    thead {
-      display: none !important;
-    }
+    thead { display: none !important; }
 
-    /* Remover QTD e SKU */
     .col-qtd,
     .col-sku,
     td:nth-child(1),
@@ -67,25 +85,20 @@
       display: none !important;
     }
 
-    /* Ajustar larguras */
-    .col-produto { width: 80% !important; }
-    .col-rastreio { width: 20% !important; }
-
-    /* Ocultar botões */
-    button, 
-    #addRastreioBtn, 
-    #salvarBtn, 
+    button,
+    #addRastreioBtn,
+    #salvarBtn,
     #printBtn {
       display: none !important;
     }
 
-.rastreio-box {
-  box-shadow: none !important;
-  border: none !important;
-  border-radius: 0 !important;
-  margin-bottom: 20px !important;
-  padding: 0 !important;
-}
+    .rastreio-box {
+      box-shadow: none !important;
+      border: none !important;
+      border-radius: 0 !important;
+      padding: 0 !important;
+      margin-bottom: 20px !important;
+    }
 
     table {
       border-collapse: collapse !important;
@@ -100,16 +113,24 @@
 
     textarea, input {
       border: none !important;
-    }
-
-    textarea {
       white-space: pre-wrap !important;
     }
 
-  } /* fim do media print */
+    /* ========= CORRIGIDO: IMPRESSÃO ========= */
+    th.col-produto,
+    td:nth-child(3) { 
+      width: 75% !important; 
+    }
+    
+    th.col-rastreio,
+    td:nth-child(4),
+    td.td-rastreio { 
+      width: 25% !important; 
 
+  }
 </style>
 </head>
+
 <body>
 
 <h2>Gerador de Pedidos Shopee (Agrupado por Rastreio)</h2>
@@ -121,21 +142,15 @@
 <button id="printBtn" class="salvar" style="background:#009688;">🖨 Imprimir pedidos</button>
 
 <script>
-let produtos = [];
-const repo = "tiagopinho/PedidosDrop";
-const filePath = "date.json";
 
-/* =========================
-      CARREGAR JSON
-========================= */
+let produtos = [];
+
 fetch("date.json")
   .then(r => r.json())
   .then(d => produtos = d)
   .catch(() => produtos = []);
 
-/* =========================
-   FUNÇÃO: CRIAR GRUPO
-========================= */
+/* Criar grupo */
 function criarRastreio(valor="") {
 
   const wrapper = document.createElement("div");
@@ -170,38 +185,42 @@ function criarRastreio(valor="") {
   const tbody = wrapper.querySelector(".tbody-group");
   const rastreioTd = wrapper.querySelector(".td-rastreio");
 
-  /* AUTO EXPAND TEXTO */
-  wrapper.addEventListener("input", e=>{
-    if(e.target.classList.contains("produto")){
+
+  /* AUTOEXPAND */
+  wrapper.addEventListener("input", e => {
+    if (e.target.classList.contains("produto")) {
       e.target.style.height = "auto";
-      e.target.style.height = e.target.scrollHeight+"px";
+      e.target.style.height = e.target.scrollHeight + "px";
     }
   });
 
-  /* NOVA LINHA AUTOMÁTICA */
+
+  /* CRIA LINHA NOVA */
   wrapper.addEventListener("input", e => {
-    if(!["qtd","sku","produto"].some(c=>e.target.classList.contains(c))) return;
+
+    if (!["qtd", "sku", "produto"].includes(e.target.classList[0])) return;
 
     const linha = e.target.closest("tr");
     const ultima = tbody.lastElementChild;
 
-    if(linha === ultima && e.target.value.trim() !== "") {
+    if (linha === ultima && e.target.value.trim() !== "") {
 
       const nova = ultima.cloneNode(true);
-      nova.querySelectorAll("input,textarea").forEach(el=>el.value="");
+      nova.querySelectorAll("input,textarea").forEach(el => el.value = "");
 
-      if(nova.querySelector(".td-rastreio")){
+      if (nova.querySelector(".td-rastreio"))
         nova.querySelector(".td-rastreio").remove();
-      }
 
       tbody.appendChild(nova);
-
       rastreioTd.rowSpan = tbody.querySelectorAll("tr").length;
     }
+
   });
 
-  /* AUTO PREENCHER PRODUTO + EXPANSÃO DE KIT */
+
+  /* AUTOPREENCHER PRODUTO */
   wrapper.addEventListener("blur", e => {
+
     if (!e.target.classList.contains("sku")) return;
 
     const sku = e.target.value.trim().toLowerCase();
@@ -223,69 +242,42 @@ function criarRastreio(valor="") {
 
     const linhas = encontrado.produto.replace(/\\n/g, "\n").split("\n");
 
-    const expandido = linhas.map(linha => {
-      const match = linha.match(/^(\d+)\s*-\s*(.+)$/);
-      if (!match) return linha;
-
-      const qtdOriginal = Number(match[1]);
-      const nomeProduto = match[2];
-      const qtdFinal = qtdOriginal * qtdDigitada;
-
-      return `${qtdFinal} - ${nomeProduto}`;
-    });
-
-    campoProduto.value = expandido.join("\n");
+    campoProduto.value = linhas
+      .map(l => {
+        const m = l.match(/^(\d+)\s*-\s*(.+)$/);
+        if (!m) return l;
+        return `${Number(m[1]) * qtdDigitada} - ${m[2]}`;
+      })
+      .join("\n");
 
     campoProduto.style.height = "auto";
     campoProduto.style.height = campoProduto.scrollHeight + "px";
 
   }, true);
+
 }
 
-/* Criar o primeiro bloco */
+/* Criar primeiro bloco */
 criarRastreio();
 
 /* Novo rastreio */
-document.getElementById("addRastreioBtn").addEventListener("click", () => criarRastreio());
+document.getElementById("addRastreioBtn")
+  .addEventListener("click", () => criarRastreio());
 
-/* SALVAR NO GITHUB (lógica futura) */
-document.getElementById("salvarBtn").addEventListener("click", async()=>{
+/* BOTÃO IMPRIMIR — remove linhas vazias antes de imprimir */
+document.getElementById("printBtn").addEventListener("click", () => {
 
-  const todosAgrupados = [];
-  const novosProdutos = [];
+  document.querySelectorAll("tbody tr").forEach(tr => {
+    const prod = tr.querySelector(".produto")?.value.trim();
+    const sku = tr.querySelector(".sku")?.value.trim();
+    const qtd = tr.querySelector(".qtd")?.value.trim();
 
-  document.querySelectorAll(".rastreio-box").forEach(box =>{
-
-    const rastreio = box.querySelector(".rastreio").value.trim();
-    const itens = [];
-
-    box.querySelectorAll("tbody tr").forEach(l=>{
-
-      const qtd = l.querySelector(".qtd")?.value.trim();
-      const sku = l.querySelector(".sku")?.value.trim();
-      const prod = l.querySelector(".produto")?.value.trim();
-
-      if(sku && prod){
-        itens.push({qtd, sku, produto: prod});
-
-        if(!produtos.find(p => p.sku?.toLowerCase() === sku.toLowerCase()))
-          novosProdutos.push({sku, produto: prod});
-      }
-    });
-
-    if(rastreio && itens.length)
-      todosAgrupados.push({rastreio, itens});
+    if (!prod && !sku && !qtd) tr.style.display = "none";
   });
 
-  alert("Itens prontos para salvar!");
+  window.print();
 });
 
-/* Botão imprimir */
-window.onload = () => {
-  document.getElementById("printBtn").addEventListener("click", () => {
-    window.print();
-  });
-};
 </script>
 
 </body>
